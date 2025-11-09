@@ -101,6 +101,12 @@ function M.toggle(opts)
   opts = filter_opts(opts)
   State.with(function(state, attached)
     if not state.terminal then
+      -- External session (tmux/zellij) without a Neovim terminal window.
+      -- We can't "toggle" a window, so we just ensure the multiplexer
+      -- session is focused so subsequent keys reach the tool.
+      if state.session and opts.focus ~= false then
+        state.session:focus()
+      end
       return
     end
     if not attached then
@@ -122,6 +128,12 @@ function M.focus(opts)
   opts = filter_opts(opts)
   State.with(function(state)
     if not state.terminal then
+      -- External session fallback: if we're running in tmux/zellij with
+      -- create != "terminal", there is no Neovim terminal window. Focus
+      -- the multiplexer session instead so input goes there.
+      if state.session then
+        state.session:focus()
+      end
       return
     end
     if state.terminal:is_focused() then

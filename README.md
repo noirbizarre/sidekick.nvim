@@ -595,6 +595,9 @@ require("sidekick.cli").toggle(opts)
 
 <!-- api_cli:end -->
 
+> [!NOTE]
+> When using a terminal multiplexer (`tmux`/`zellij`) with `cli.mux.enabled = true` and `cli.mux.create ~= "terminal"`, Sidekick does not create a Neovim terminal window. In that case `require("sidekick.cli").toggle({ focus = true })` and `focus()` will fall back to focusing the external multiplexer session so input reaches the tool. Set `focus = false` to skip this behavior.
+
 ### Prompts & Context
 
 Sidekick comes with a set of predefined prompts that you can use with your AI tools.

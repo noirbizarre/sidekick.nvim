@@ -195,4 +195,25 @@ function M:dump()
   return ret
 end
 
+function M:focus()
+  -- Focus the tmux pane/window if external
+  local pane = self:pane_id()
+  if not pane then
+    return self
+  end
+  if self.mux_session and self.sid ~= self.mux_session then
+    Util.exec({ "tmux", "switch-client", "-t", self.mux_session })
+  end
+  Util.exec({ "tmux", "select-pane", "-t", pane })
+  if self.tool.mux_focus then
+    Util.exec({ "tmux", "send-keys", "-t", pane, "Escape", "[", "I" })
+  end
+  return self
+end
+
+function M:blur()
+  -- No reliable way to blur a tmux pane from inside Neovim; noop
+  return self
+end
+
 return M

@@ -69,6 +69,17 @@ function B:is_attached()
   return M._attached[self.id] ~= nil
 end
 
+-- Optional focus handlers for non-terminal backends
+---@return sidekick.cli.Session
+function B:focus()
+  return self
+end
+
+---@return sidekick.cli.Session
+function B:blur()
+  return self
+end
+
 --- List all active sessions for this backend
 ---@return sidekick.cli.session.State[]
 function B.sessions()

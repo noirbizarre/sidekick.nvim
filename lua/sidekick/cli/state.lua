@@ -195,7 +195,14 @@ function M.attach(state, opts)
       end
     end
   elseif attached then
-    Util.info("Attached to `" .. state.tool.name .. "`")
+    if opts.show then
+      Util.info("Attached to `" .. state.tool.name .. "`")
+      if opts.focus ~= false and state.session then
+        state.session:focus()
+      end
+    elseif opts.focus and state.session then
+      state.session:focus()
+    end
   end
   return state, attached
 end
