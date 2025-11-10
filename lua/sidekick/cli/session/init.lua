@@ -18,6 +18,8 @@ M._attached = {} ---@type table<string,sidekick.cli.Session>
 ---@field parent? sidekick.cli.Session
 ---@field mux_session? string
 ---@field mux_backend? string
+---@field mux_pane_id? string
+---@field mux_pid? number
 
 ---@alias sidekick.cli.session.Opts sidekick.cli.session.State|{cwd?:string,id?:string}
 
@@ -197,6 +199,7 @@ function M.attach(session)
       backend = "terminal",
       mux_backend = session.backend,
       mux_session = session.mux_session,
+      mux_pane_id = session.mux_pane_id,
       parent = session,
     })
     session:start()

@@ -1,8 +1,9 @@
 local Config = require("sidekick.config")
+local Config = require("sidekick.config")
 local Util = require("sidekick.util")
 
 ---@class sidekick.cli.muxer.Zellij: sidekick.cli.Session
----@field zellij_pane_id string
+---@field mux_pane_id string
 ---@field zellij string
 local M = {}
 M.__index = M
@@ -81,9 +82,6 @@ function M.sessions()
   local ret = {} ---@type sidekick.cli.session.State[]
   local Terminal = require("sidekick.cli.terminal")
 
-  -- Find the terminal instance attached to this zellij session.
-  -- We need this to get the PIDs for deduplication, since zellij's
-  -- API doesn't provide process information.
   local function find_pids(sid)
     local pids = {} ---@type integer[]
     for _, t in pairs(Terminal.terminals) do
@@ -102,12 +100,30 @@ function M.sessions()
         cwd = state.cwd,
         tool = state.tool,
         mux_session = s,
+        mux_pane_id = "zellij:" .. s,
         pids = find_pids(s),
       }
     end
   end
-
   return ret
+end
+
+function M:send(text)
+  -- Sending keys is intentionally unsupported; rely on terminal child
+  require("sidekick.util").warn({ "Zellij backend cannot send text directly." })
+end
+
+function M:submit()
+  -- No direct submit; noop
+end
+
+function M:focus()
+  -- Focus handled by embedded terminal
+  return self
+end
+
+function M:blur()
+  return self
 end
 
 -- function M:dump()

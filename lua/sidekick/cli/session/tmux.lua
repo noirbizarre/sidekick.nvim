@@ -2,8 +2,8 @@ local Config = require("sidekick.config")
 local Util = require("sidekick.util")
 
 ---@class sidekick.cli.muxer.Tmux: sidekick.cli.Session
----@field tmux_pane_id string
----@field tmux_pid number
+---@field mux_pane_id string
+---@field mux_pid number
 local M = {}
 M.__index = M
 
@@ -59,15 +59,15 @@ function M:spawn(cmd)
   local pane = M.panes({ cmd = cmd, notify = true })[1]
   if pane then
     self.id = pane.skid
-    self.tmux_pane_id = pane.id
+    self.mux_pane_id = pane.id
     self.mux_session = pane.session_name
-    self.tmux_pid = pane.pid
+    self.mux_pid = pane.pid
     self.started = true
   end
 end
 
 function M:is_running()
-  return self.tmux_pid and vim.api.nvim_get_proc(self.tmux_pid) ~= nil
+  return self.mux_pid and vim.api.nvim_get_proc(self.mux_pid) ~= nil
 end
 
 ---@param ret string[]
@@ -140,8 +140,8 @@ function M.sessions()
             id = pane.skid,
             cwd = proc.cwd or pane.cwd,
             tool = tool,
-            tmux_pane_id = pane.id,
-            tmux_pid = pane.pid,
+            mux_pane_id = pane.id,
+            mux_pid = pane.pid,
             mux_session = pane.session_name,
             pids = pids,
           }
@@ -155,26 +155,39 @@ function M.sessions()
 end
 
 function M:pane_id()
-  if self.tmux_pane_id then
-    return self.tmux_pane_id
+  if self.mux_pane_id then
+    return self.mux_pane_id
   end
+  -- If we know the tmux pane's process id, try to recover the pane id
+  -- This can happen when sessions were discovered, but a later instance
+  -- lost its mux_pane_id (eg. after reload).
+  if self.mux_pid then
+    for _, pane in ipairs(M.panes()) do
+      if pane.pid == self.mux_pid then
+        self.mux_pane_id = pane.id
+        self.mux_session = pane.session_name
+        return self.mux_pane_id
+      end
+    end
+  end
+  -- For internal (non-external) sessions, we can spawn to populate pane info
   if not self.external then
     self:spawn({ "tmux", "list-panes", "-s", "-F", PANE_FORMAT, "-t", self.mux_session })
   end
-  return self.tmux_pane_id
+  return self.mux_pane_id
 end
 
 ---Send text to a tmux pane
 function M:send(text)
   local function send()
-    local buffer = "sidekick-" .. self.tmux_pane_id
+    local buffer = "sidekick-" .. self.mux_pane_id
     Util.exec({ "tmux", "load-buffer", "-b", buffer, "-" }, { stdin = text })
-    Util.exec({ "tmux", "paste-buffer", "-b", buffer, "-d", "-r", "-t", self.tmux_pane_id })
+    Util.exec({ "tmux", "paste-buffer", "-b", buffer, "-d", "-r", "-t", self.mux_pane_id })
   end
 
   if self.tool.mux_focus then
     -- Send focus-in event first (some TUI apps like qwen ignore input when unfocused)
-    Util.exec({ "tmux", "send-keys", "-t", self.tmux_pane_id, "Escape", "[", "I" })
+    Util.exec({ "tmux", "send-keys", "-t", self.mux_pane_id, "Escape", "[", "I" })
     vim.defer_fn(send, 50) -- slight delay to ensure focus event is processed first
   else
     send()
@@ -183,7 +196,7 @@ end
 
 ---Send text to a tmux pane
 function M:submit()
-  Util.exec({ "tmux", "send-keys", "-t", self.tmux_pane_id, "Enter" })
+  Util.exec({ "tmux", "send-keys", "-t", self.mux_pane_id, "Enter" })
 end
 
 function M:dump()
