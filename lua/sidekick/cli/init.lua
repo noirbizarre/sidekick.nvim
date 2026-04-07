@@ -112,6 +112,7 @@ function M.toggle(opts)
   end, {
     attach = true,
     filter = opts.filter,
+    focus = opts.focus,
   })
 end
 
